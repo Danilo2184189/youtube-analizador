@@ -35,7 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             const analyses = await Promise.all(videoUrls.map(async (url) => {
-                const response = await fetch('/start-analysis', {
+                const startResponse = await fetch('/start-analysis', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -43,31 +43,23 @@ document.addEventListener('DOMContentLoaded', () => {
                     body: JSON.stringify({ videoUrl: url, productInfo }),
                 });
 
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                if (!startResponse.ok) {
+                    throw new Error(`HTTP error! status: ${startResponse.status}`);
                 }
 
-                const data = await response.json();
-                if (data.error) {
-                    throw new Error(data.error);
-                }
+                const { runId } = await startResponse.json();
+                let analysisData;
 
-                const checkStatus = async (runId) => {
-                    const statusResponse = await fetch(`/check-analysis/${runId}`, {
-                        method: 'GET',
-                    });
+                while (!analysisData) {
+                    const statusResponse = await fetch(`/check-analysis/${runId}`);
                     if (!statusResponse.ok) {
                         throw new Error(`HTTP error! status: ${statusResponse.status}`);
                     }
-                    return statusResponse.json();
-                };
-
-                let analysisData;
-                while (!analysisData) {
-                    analysisData = await checkStatus(data.runId);
-                    if (!analysisData || analysisData.status === 'PENDING') {
+                    const statusData = await statusResponse.json();
+                    if (statusData.status === 'SUCCEEDED') {
+                        analysisData = statusData.data;
+                    } else {
                         await new Promise(resolve => setTimeout(resolve, 10000)); // Esperar 10 segundos
-                        analysisData = null;
                     }
                 }
 
