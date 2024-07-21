@@ -11,8 +11,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 const client = new ApifyClient({
     token: process.env.APIFY_API_TOKEN,
-    maxRetries: 5,  // Configura el cliente para reintentar en caso de fallos temporales
-    minDelayBetweenRetriesMillis: 1000,  // Retardo mínimo entre reintentos en milisegundos
+    maxRetries: 5,
+    minDelayBetweenRetriesMillis: 1000,
 });
 
 app.get('/', (req, res) => {
