@@ -16,25 +16,20 @@ const client = new ApifyClient({
     requestTimeoutMillis: 60000, // 60 segundos
 });
 
-// Middleware para manejar tiempo de espera
-app.use((req, res, next) => {
-    req.setTimeout(60000); // 60 segundos
-    next();
-});
-
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 app.post('/analyze', async (req, res) => {
+    req.setTimeout(0);  // Deshabilita el tiempo de espera para esta ruta
     try {
-        const { videoUrls, productInfo } = req.body;
+        const { videoUrl, productInfo } = req.body;
         const input = {
-            video_url_1: videoUrls[0] || '',
-            video_url_2: videoUrls[1] || '',
-            video_url_3: videoUrls[2] || '',
-            video_url_4: videoUrls[3] || '',
-            video_url_5: videoUrls[4] || '',
+            video_url_1: videoUrl,
+            video_url_2: '',
+            video_url_3: '',
+            video_url_4: '',
+            video_url_5: '',
             product_info: productInfo,
         };
 
