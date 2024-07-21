@@ -1,6 +1,6 @@
 require('dotenv').config();
 const express = require('express');
-const { ApifyClient } = require('apify-client');
+const Queue = require('bee-queue');
 const path = require('path');
 
 const app = express();
@@ -9,51 +9,41 @@ const port = process.env.PORT || 3000;
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-const client = new ApifyClient({ token: process.env.APIFY_API_TOKEN });
+const analysisQueue = new Queue('analysis', {
+  redis: {
+    host: process.env.REDIS_HOST,
+    port: process.env.REDIS_PORT,
+    password: process.env.REDIS_PASSWORD,
+  },
+});
 
 app.post('/start-analysis', async (req, res) => {
   try {
     const { videoUrl, productInfo } = req.body;
-    const input = {
-      video_url_1: videoUrl,
-      video_url_2: '',
-      video_url_3: '',
-      video_url_4: '',
-      video_url_5: '',
-      product_info: productInfo,
-    };
+    
+    const job = await analysisQueue.createJob({ 
+      videoUrl,
+      productInfo
+    }).save();
 
-    const run = await client.actor("WRio7FBA1jDNkkN1d").call(input, {
-      webhooks: [
-        `https://${req.headers.host}/analysis-result`
-      ]
-    });
-
-    res.status(202).json({ status: 'RUNNING', runId: run.id });
+    res.status(202).json({ status: 'QUEUED', jobId: job.id });
   } catch (error) {
     res.status(500).json({ error: 'An error occurred while processing your request.', details: error.message });
   }
 });
 
-app.post('/analysis-result', async (req, res) => {
+app.get('/job-status/:jobId', async (req, res) => {
   try {
-    const { resource } = req.body;
+    const { jobId } = req.params;
+    const job = await analysisQueue.getJob(jobId);
 
-    if (resource.actorRunStatus === 'SUCCEEDED') {
-      const { defaultDatasetId } = resource;
-      const { items } = await client.dataset(defaultDatasetId).listItems();
-
-      // Aquí puedes almacenar los resultados en una base de datos
-      // o notificar al cliente a través de otro mecanismo (por ejemplo, WebSocket o Server-Sent Events)
-      console.log('Analysis completed:', items[0]);
-    } else if (resource.actorRunStatus === 'ABORTED' || resource.actorRunStatus === 'TIMEOUT') {
-      console.error('Analysis failed:', resource);
+    if (!job) {
+      res.status(404).json({ error: 'Job not found' });
+    } else {
+      res.json({ status: job.status, result: job.data.result });
     }
-
-    res.status(200).send();
   } catch (error) {
-    console.error('Error processing webhook:', error);
-    res.status(500).send();
+    res.status(500).json({ error: 'An error occurred while checking the job status.', details: error.message });
   }
 });
 
