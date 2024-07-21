@@ -16,12 +16,17 @@ const client = new ApifyClient({
     requestTimeoutMillis: 60000, // 60 segundos
 });
 
+// Middleware para manejar tiempos de espera
+app.use((req, res, next) => {
+    req.setTimeout(60000); // 60 segundos
+    next();
+});
+
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 app.post('/analyze', async (req, res) => {
-    req.setTimeout(0);  // Deshabilita el tiempo de espera para esta ruta
     try {
         const { videoUrl, productInfo } = req.body;
         const input = {
@@ -35,7 +40,7 @@ app.post('/analyze', async (req, res) => {
 
         const run = await client.actor("WRio7FBA1jDNkkN1d").call(input);
         const { items } = await client.dataset(run.defaultDatasetId).listItems();
-        
+
         res.json(items[0]);
     } catch (error) {
         res.status(500).json({ error: 'An error occurred while processing your request.', details: error.message });
