@@ -59,7 +59,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (statusData.status === 'SUCCEEDED') {
                         analysisData = statusData.data;
                     } else {
-                        await new Promise(resolve => setTimeout(resolve, 10000)); // Esperar 10 segundos
+                        await new Promise(resolve => setTimeout(resolve, 5000)); // Esperar 5 segundos
                     }
                 }
 
@@ -97,14 +97,22 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     function formatMarkdown(text) {
+        // Convertir encabezados
         text = text.replace(/^### (.*$)/gim, '<h4>$1</h4>');
-        text = text.replace(/^## (.*$)/gim, '<h3>$1</3>');
+        text = text.replace(/^## (.*$)/gim, '<h3>$1</h3>');
         text = text.replace(/^# (.*$)/gim, '<h2>$1</h2>');
+
+        // Convertir listas
         text = text.replace(/^\* (.*$)/gim, '<ul><li>$1</li></ul>');
         text = text.replace(/^(\d+)\. (.*$)/gim, '<ol><li>$2</li></ol>');
+
+        // Convertir énfasis
         text = text.replace(/\*\*(.*)\*\*/gim, '<strong>$1</strong>');
         text = text.replace(/\*(.*)\*/gim, '<em>$1</em>');
+
+        // Convertir saltos de línea
         text = text.replace(/\n$/gim, '<br>');
+
         return text.trim();
     }
 
