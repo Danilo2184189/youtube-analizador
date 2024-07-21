@@ -34,35 +34,38 @@ document.addEventListener('DOMContentLoaded', () => {
         results.classList.add('hidden');
 
         try {
-            const response = await fetch('/analyze', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ videoUrls, productInfo }),
-            });
+            const analyses = await Promise.all(videoUrls.map(async (url) => {
+                const response = await fetch('/analyze', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ videoUrl: url, productInfo }),
+                });
 
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
 
-            const data = await response.json();
+                const data = await response.json();
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                return data;
+            }));
 
-            if (data.error) {
-                throw new Error(data.error);
-            }
-
-            const formattedAnalysis = formatMarkdown(data.analysis);
-            analysisContent.innerHTML = `
-                <h2>Analysis:</h2>
-                ${formattedAnalysis}
+            const formattedAnalysis = analyses.map((data, index) => `
+                <h2>Analysis for Video ${index + 1}:</h2>
+                ${formatMarkdown(data.analysis)}
                 <h2>Transcriptions:</h2>
                 ${Object.entries(data.transcriptions).map(([key, value]) => `
                     <h3>${key}:</h3>
                     <p><strong>URL:</strong> ${value.url}</p>
                     <div class="transcript">${formatMarkdown(value.transcript)}</div>
                 `).join('')}
-            `;
+            `).join('');
+
+            analysisContent.innerHTML = formattedAnalysis;
 
             // Agregar botón de copiar
             const copyBtn = document.createElement('button');
@@ -93,7 +96,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Convertir énfasis
         text = text.replace(/\*\*(.*)\*\*/gim, '<strong>$1</strong>');
-        text = text.replace(/\*(.*)\*/gim, '<em>$1\</em>');
+        text = text.replace(/\*(.*)\*/gim, '<em>$1</em>');
 
         // Convertir saltos de línea
         text = text.replace(/\n$/gim, '<br>');
