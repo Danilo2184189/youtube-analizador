@@ -35,7 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             const analyses = await Promise.all(videoUrls.map(async (url) => {
-                const response = await fetch('/analyze', {
+                const response = await fetch('/start-analysis', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -51,7 +51,27 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (data.error) {
                     throw new Error(data.error);
                 }
-                return data;
+
+                const checkStatus = async (runId) => {
+                    const statusResponse = await fetch(`/check-analysis/${runId}`, {
+                        method: 'GET',
+                    });
+                    if (!statusResponse.ok) {
+                        throw new Error(`HTTP error! status: ${statusResponse.status}`);
+                    }
+                    return statusResponse.json();
+                };
+
+                let analysisData;
+                while (!analysisData) {
+                    analysisData = await checkStatus(data.runId);
+                    if (!analysisData || analysisData.status === 'PENDING') {
+                        await new Promise(resolve => setTimeout(resolve, 10000)); // Esperar 10 segundos
+                        analysisData = null;
+                    }
+                }
+
+                return analysisData;
             }));
 
             const formattedAnalysis = analyses.map((data, index) => `
