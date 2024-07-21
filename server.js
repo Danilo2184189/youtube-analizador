@@ -19,7 +19,6 @@ app.get('/', (req, res) => {
 
 app.post('/analyze', async (req, res) => {
     try {
-        console.log('Received request:', req.body);
         const { videoUrls, productInfo } = req.body;
         const input = {
             video_url_1: videoUrls[0] || '',
@@ -30,31 +29,21 @@ app.post('/analyze', async (req, res) => {
             product_info: productInfo,
         };
 
-        console.log('Calling Apify actor with input:', input);
         const run = await client.actor("WRio7FBA1jDNkkN1d").call(input);
-        console.log('Apify actor run finished:', run);
-
         const { items } = await client.dataset(run.defaultDatasetId).listItems();
-        console.log('Retrieved items from dataset:', items);
         
         res.json(items[0]);
     } catch (error) {
-        console.error('Error in /analyze:', error);
         res.status(500).json({ error: 'An error occurred while processing your request.', details: error.message });
     }
 });
 
 app.use((err, req, res, next) => {
-    console.error(err.stack);
     res.status(500).send('Something broke!');
 });
 
 app.listen(port, () => {
     console.log(`Server running at http://localhost:${port}`);
-});
-
-process.on('unhandledRejection', (reason, promise) => {
-    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
 });
 
 module.exports = app;
