@@ -13,6 +13,7 @@ const client = new ApifyClient({
     token: process.env.APIFY_API_TOKEN,
     maxRetries: 5,
     minDelayBetweenRetriesMillis: 1000,
+    requestTimeoutMillis: 60000, // 60 segundos
 });
 
 app.get('/', (req, res) => {
