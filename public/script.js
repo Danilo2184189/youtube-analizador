@@ -93,7 +93,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Convertir énfasis
         text = text.replace(/\*\*(.*)\*\*/gim, '<strong>$1</strong>');
-        text = text.replace(/\*(.*)\*/gim, '<em>$1</em>');
+        text = text.replace(/\*(.*)\*/gim, '<em>$1\</em>');
 
         // Convertir saltos de línea
         text = text.replace(/\n$/gim, '<br>');
