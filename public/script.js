@@ -34,7 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
         results.classList.add('hidden');
 
         try {
-            const analyses = await Promise.all(videoUrls.map(async (url) => {
+            const runIds = await Promise.all(videoUrls.map(async (url) => {
                 const startResponse = await fetch('/start-analysis', {
                     method: 'POST',
                     headers: {
@@ -48,8 +48,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 const { runId } = await startResponse.json();
-                let analysisData;
+                return runId;
+            }));
 
+            // Check status of each analysis
+            const analyses = await Promise.all(runIds.map(async (runId) => {
+                let analysisData;
                 while (!analysisData) {
                     const statusResponse = await fetch(`/check-analysis/${runId}`);
                     if (!statusResponse.ok) {
@@ -62,7 +66,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         await new Promise(resolve => setTimeout(resolve, 5000)); // Esperar 5 segundos
                     }
                 }
-
                 return analysisData;
             }));
 
@@ -99,7 +102,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function formatMarkdown(text) {
         // Convertir encabezados
         text = text.replace(/^### (.*$)/gim, '<h4>$1</h4>');
-        text = text.replace(/^## (.*$)/gim, '<h3>$1</h3>');
+        text = text.replace(/^## (.*$)/gim, '<h3>$1></h3>');
         text = text.replace(/^# (.*$)/gim, '<h2>$1</h2>');
 
         // Convertir listas
@@ -108,7 +111,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Convertir énfasis
         text = text.replace(/\*\*(.*)\*\*/gim, '<strong>$1</strong>');
-        text = text.replace(/\*(.*)\*/gim, '<em>$1</em>');
+        text = text.replace(/\*(.*)\*/gim, '<em>$1></em>');
 
         // Convertir saltos de línea
         text = text.replace(/\n$/gim, '<br>');
@@ -118,10 +121,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function copyResults() {
         const textToCopy = analysisContent.innerText;
-        navigator.clipboard.writeText(textToCopy).then(() => {
-            alert('Results copied to clipboard!');
-        }).catch(err => {
-            console.error('Failed to copy: ', err);
-        });
-    }
-});
+        navigator.clipboard.writeText(textToCop
