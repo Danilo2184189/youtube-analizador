@@ -11,6 +11,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 const client = new ApifyClient({
     token: process.env.APIFY_API_TOKEN,
+    maxRetries: 5,  // Configura el cliente para reintentar en caso de fallos temporales
+    minDelayBetweenRetriesMillis: 1000,  // Retardo mínimo entre reintentos en milisegundos
 });
 
 app.get('/', (req, res) => {
@@ -18,6 +20,7 @@ app.get('/', (req, res) => {
 });
 
 app.post('/analyze', async (req, res) => {
+    req.setTimeout(0);  // Deshabilita el tiempo de espera para esta ruta
     try {
         const { videoUrls, productInfo } = req.body;
         const input = {
