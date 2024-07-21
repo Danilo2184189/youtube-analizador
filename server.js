@@ -23,28 +23,37 @@ app.post('/start-analysis', async (req, res) => {
       product_info: productInfo,
     };
 
-    const run = await client.actor("WRio7FBA1jDNkkN1d").call(input);
-    res.json({ runId: run.id });
+    const run = await client.actor("WRio7FBA1jDNkkN1d").call(input, {
+      webhooks: [
+        `https://${req.headers.host}/analysis-result`
+      ]
+    });
+
+    res.status(202).json({ status: 'RUNNING', runId: run.id });
   } catch (error) {
     res.status(500).json({ error: 'An error occurred while processing your request.', details: error.message });
   }
 });
 
-app.get('/check-analysis/:runId', async (req, res) => {
+app.post('/analysis-result', async (req, res) => {
   try {
-    const { runId } = req.params;
-    const run = await client.run(runId).get();
-    
-    if (run.status === 'RUNNING') {
-      res.status(202).json({ status: 'RUNNING' });
-    } else if (run.status === 'SUCCEEDED') {
-      const { items } = await client.dataset(run.defaultDatasetId).listItems();
-      res.json({ status: 'SUCCEEDED', data: items[0] });  
-    } else {
-      res.status(500).json({ status: 'FAILED', error: 'Analysis failed.' });
+    const { resource } = req.body;
+
+    if (resource.actorRunStatus === 'SUCCEEDED') {
+      const { defaultDatasetId } = resource;
+      const { items } = await client.dataset(defaultDatasetId).listItems();
+
+      // Aquí puedes almacenar los resultados en una base de datos
+      // o notificar al cliente a través de otro mecanismo (por ejemplo, WebSocket o Server-Sent Events)
+      console.log('Analysis completed:', items[0]);
+    } else if (resource.actorRunStatus === 'ABORTED' || resource.actorRunStatus === 'TIMEOUT') {
+      console.error('Analysis failed:', resource);
     }
+
+    res.status(200).send();
   } catch (error) {
-    res.status(500).json({ error: 'An error occurred while checking the analysis status.', details: error.message });
+    console.error('Error processing webhook:', error);
+    res.status(500).send();
   }
 });
 
