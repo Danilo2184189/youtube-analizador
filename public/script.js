@@ -34,7 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
         results.classList.add('hidden');
 
         try {
-            const runIds = await Promise.all(videoUrls.map(async (url) => {
+            const analyses = await Promise.all(videoUrls.map(async (url) => {
                 const startResponse = await fetch('/start-analysis', {
                     method: 'POST',
                     headers: {
@@ -44,19 +44,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
 
                 if (!startResponse.ok) {
-                    throw new Error(`HTTP error! status: ${startResponse.status}`);
+                    throw new Error(HTTP error! status: ${startResponse.status});
                 }
 
                 const { runId } = await startResponse.json();
-                return runId;
-            }));
-
-            const analyses = await Promise.all(runIds.map(async (runId) => {
                 let analysisData;
+
                 while (!analysisData) {
-                    const statusResponse = await fetch(`/check-analysis/${runId}`);
+                    const statusResponse = await fetch(/check-analysis/${runId});
                     if (!statusResponse.ok) {
-                        throw new Error(`HTTP error! status: ${statusResponse.status}`);
+                        throw new Error(HTTP error! status: ${statusResponse.status});
                     }
                     const statusData = await statusResponse.json();
                     if (statusData.status === 'SUCCEEDED') {
@@ -65,19 +62,20 @@ document.addEventListener('DOMContentLoaded', () => {
                         await new Promise(resolve => setTimeout(resolve, 5000)); // Esperar 5 segundos
                     }
                 }
+
                 return analysisData;
             }));
 
-            const formattedAnalysis = analyses.map((data, index) => `
+            const formattedAnalysis = analyses.map((data, index) => 
                 <h2>Analysis for Video ${index + 1}:</h2>
                 ${formatMarkdown(data.analysis)}
                 <h2>Transcriptions:</h2>
-                ${Object.entries(data.transcriptions).map(([key, value]) => `
+                ${Object.entries(data.transcriptions).map(([key, value]) => 
                     <h3>${key}:</h3>
                     <p><strong>URL:</strong> ${value.url}</p>
                     <div class="transcript">${formatMarkdown(value.transcript)}</div>
-                `).join('')}
-            `).join('');
+                ).join('')}
+            ).join('');
 
             analysisContent.innerHTML = formattedAnalysis;
 
@@ -91,7 +89,7 @@ document.addEventListener('DOMContentLoaded', () => {
             results.classList.remove('hidden');
         } catch (error) {
             console.error('Error:', error);
-            analysisContent.innerHTML = `<p style="color: red;">An error occurred: ${error.message}</p>`;
+            analysisContent.innerHTML = <p style="color: red;">An error occurred: ${error.message}</p>;
             results.classList.remove('hidden');
         } finally {
             loading.classList.add('hidden');
